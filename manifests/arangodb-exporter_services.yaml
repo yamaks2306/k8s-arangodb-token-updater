@@ -1,0 +1,56 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: arangodb-exporter
+  namespace: kube-prometheus-stack
+  labels:
+    prometheus: prometheus
+spec:
+  selector:
+    matchLabels:
+      k8s-app: arangodb-exporter
+  endpoints:
+    - bearerTokenSecret:
+        key: token
+        name: arangodb-token
+      path: /_admin/metrics/v2
+      port: metrics
+      interval: 1m
+      scrapeTimeout: 30s
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-database
+  namespace: kube-prometheus-stack
+  labels:
+    app: db-database
+    k8s-app: arangodb02-exporter
+spec:
+  clusterIP: ""
+  type: ExternalName
+  externalName: 192.168.1.100
+  ports:
+  - name: metrics
+    port: 8529
+    protocol: TCP
+    targetPort: 8529
+    
+---
+kind: Endpoints
+apiVersion: v1
+metadata: 
+  name: db-database
+  namespace: kube-prometheus-stack
+  labels:
+    app: db-database
+    k8s-app: arangodb02-exporter
+subsets:
+  - addresses:
+    - ip: 192.168.1.100
+    ports:
+      - port: 8529
+        name: metrics
+        protocol: TCP

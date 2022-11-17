@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: arangodb-token-updater
+  namespace: kube-prometheus-stack
+spec:
+  schedule: "30 3 */20 * *"
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: token-updater
+          containers:
+          - name: token-updater
+            image: arangotokenupdater:0.0.1
+            command: ["python3", "./arango_token_updater.py", "--secret", "arangodb-token"]
+            imagePullPolicy: IfNotPresent
+            envFrom:
+            - secretRef:
+                name: arangodb-secret
+          imagePullSecrets:
+            - name: secrets-dockerhub-cred
+          restartPolicy: Never

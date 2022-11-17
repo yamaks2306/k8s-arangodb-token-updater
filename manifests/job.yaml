@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: arangodb-token-updater
+  namespace: kube-prometheus-stack
+spec:
+  template:
+    spec:
+      serviceAccountName: token-updater
+      containers:
+      - name: token-updater
+        image: arangotokenupdater:0.0.1
+        command: ["python3", "./arango_token_updater.py", "--secret", "arangodb-token"]
+        envFrom:
+        - secretRef:
+            name: arangodb-secret
+      imagePullSecrets:
+        - name: secrets-dockerhub-cred
+      restartPolicy: Never
+  backoffLimit: 4
